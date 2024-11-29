@@ -2,13 +2,13 @@
 
 This repository holds the stroke risk prediction project.
 
-# The stroke risk prediction project was built and evaluated using R Markdown and was deployed using R Shiny. The R Markdown and R Shiny files are committed to this GitHub repository.
+The stroke risk prediction project was built and evaluated using R Markdown and was deployed using R Shiny. The R Markdown and R Shiny files are committed to this GitHub repository.
 
-Project Overview
+# Project Overview
 
 According to the World Health Organization (WHO) stroke is the 2nd leading cause of death globally, responsible for approximately 11% of total deaths. This project utilized machine learning techniques to predict the risk of stroke based on various demographic, clinical, and lifestyle factors. By leveraging multiple models, this study aimed to identify the most effective prediction model and evaluate its performance metrics. The dataset used included variables such as age, gender, average glucose level, BMI, hypertension, heart disease, marital status, work type, residence type, and smoking status. The outcome variable was stroke. Since stroke (“0”, “1”, or “Yes”, “No”) is a binary classification variable, we deployed five binary classification models to answer our research question.
 
-Machine Learning Models Used
+# Machine Learning Models Used
 
 Logistic Regression: A baseline statistical model commonly used for binary classification problems. It was used to provide a reference point for model performance. Logistic regression has interpretable coefficients that indicate the relationship between predictors and the probability of stroke. The logistic regression achieved an accuracy of 94.75% but had a low ROC AUC score of 0.15, indicating poor discrimination for positive cases.
 
@@ -20,11 +20,11 @@ Decision Tree: Provides an intuitive representation of decision-making, making i
 
 XGBoost: A highly efficient and scalable gradient boosting model that is popular for tabular data. It handles missing data, reduces bias and variance, and provides strong predictive performance. The XGBoost model achieved the highest accuracy (94.52%) and ROC AUC (0.16). It showed excellent recall (99.75%) and precision (94.75%).
 
-Performance Metrics
+# Performance Metrics
 
 Key metrics were used to evaluate model performance, providing insight into classification accuracy and balance between false positives and negatives of stroke risk prediction. Accuracy: The proportion of correct predictions out of all predictions. ROC AUC: Measures the ability of the model to distinguish between classes. Precision: Indicates the proportion of positive identifications that were correct. Recall (Sensitivity): Proportion of actual positives correctly identified. F1-Score: The harmonic mean of precision and recall, balancing the two.
 
-Findings
+# Findings
 
 Logistic Regression and Decision Tree achieved similar accuracy but performed poorly in ROC AUC, indicating challenges in ranking probabilities for positive cases. SVM demonstrated a balance between precision and recall, but its ROC AUC score (0.34) suggested room for improvement. Random Forest and XGBoost exhibited high recall, crucial for identifying true positives in stroke prediction, but suffered from low ROC AUC scores.
 
@@ -38,7 +38,7 @@ XGBoost emerged as the best model for stroke prediction, balancing high accuracy
 
 Clinical factors like age, BMI, and average glucose level significantly influenced stroke predictions, highlighting the need for targeted interventions in at-risk populations. Demographic and lifestyle factors had secondary importance, suggesting opportunities for public health campaigns.
 
-Practical Implications:
+# Practical Implications:
 
 The findings can guide clinicians in early stroke risk assessment, especially for patients with elevated glucose levels or BMI. Models with high recall, like Random Forest and XGBoost, can be deployed in medical settings to minimize missed diagnoses.
 
@@ -46,7 +46,7 @@ Future Work:
 
 Using techniques like SMOTE (Synthetic Minority Oversampling Technique) or undersampling to balance classes could improve performance. Combining predictions from multiple models could enhance overall performance. Validating models on external datasets or in clinical settings would ensure robustness and reliability.
 
-Recommendations
+# Recommendations
 
 Deploy XGBoost or Random Forest in Clinical Settings: These models demonstrated high sensitivity, ensuring that high-risk patients are not missed.
 
