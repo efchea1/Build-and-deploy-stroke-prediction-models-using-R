@@ -42,7 +42,7 @@ Clinical factors like age, BMI, and average glucose level significantly influenc
 
 The findings can guide clinicians in early stroke risk assessment, especially for patients with elevated glucose levels or BMI. Models with high recall, like Random Forest and XGBoost, can be deployed in medical settings to minimize missed diagnoses.
 
-Future Work:
+## Future Work:
 
 Using techniques like SMOTE (Synthetic Minority Oversampling Technique) or undersampling to balance classes could improve performance. Combining predictions from multiple models could enhance overall performance. Validating models on external datasets or in clinical settings would ensure robustness and reliability.
 
