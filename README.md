@@ -55,3 +55,10 @@ Focus on Data Quality: Collecting more balanced datasets with equal representati
 Integrate Risk Models into Decision Support Systems: Embedding models into electronic health records can aid clinicians in real-time risk assessment.
 
 Educate Stakeholders: Public health officials and clinicians should be trained to interpret model outputs and leverage insights for preventive care.
+
+## 📄 License
+
+This project is licensed under the [Creative Commons Attribution-NonCommercial 4.0 International License](https://creativecommons.org/licenses/by-nc/4.0/).
+
+© 2025 Emmanuel Fle Chea. See the LICENSE file for full terms and usage guidelines.
+
