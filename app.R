@@ -2,9 +2,36 @@
 library(shiny)
 library(tidyverse)
 library(ggplot2)
+library(tidymodels)
+
+levels_map <- list(
+  gender         = c("Female","Male"),
+  hypertension   = c("No","Yes"),
+  heart_disease  = c("No","Yes"),
+  ever_married   = c("No","Yes"),
+  work_type      = c("children","Govt_job","Never_worked","Private","Self-employed"),
+  Residence_type = c("Rural","Urban"),
+  smoking_status = c("never smoked","formerly smoked","smokes") 
+)
+
+# In prepare_data(), coerce to factors with those exact levels
+prepare_data <- reactive({
+  tibble(
+    age               = input$age,
+    avg_glucose_level = input$glucose,
+    bmi               = input$bmi,
+    gender            = factor(input$gender,        levels = levels_map$gender),
+    hypertension      = factor(input$hypertension,  levels = levels_map$hypertension),
+    heart_disease     = factor(input$heart_disease, levels = levels_map$heart_disease),
+    ever_married      = factor(input$ever_married,  levels = levels_map$ever_married),
+    work_type         = factor(input$work_type,     levels = levels_map$work_type),
+    Residence_type    = factor(input$residence,     levels = levels_map$Residence_type),
+    smoking_status    = factor(input$smoking_status,levels = levels_map$smoking_status)
+  )
+})
 
 # Load pre-saved data
-evaluation_results <- read.csv("evaluation_metrics.csv")  # Evaluation metrics table
+evaluation_results <- read.csv("evaluation_metrics.csv")  # Performance Evaluation metrics table
 confusion_matrices <- readRDS("confusion_matrices.rds")   # Confusion matrices
 
 # Initialize Models with Error Handling
@@ -18,7 +45,18 @@ models <- list(
 
 # Define UI
 ui <- fluidPage(
-  titlePanel("Stroke Risk Dashboard"),
+  titlePanel(
+    div(style = "color:#2C3EFA; font-size:28px; font-weight:bold;", 
+        "Stroke Risk Prediction Dashboard")
+  ),
+  tags$head(
+    tags$style(HTML("
+    .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-weight:600; }
+    .badge-low  { background:#e6f4ea; }   /* green-ish */
+    .badge-mod  { background:#fff3cd; }   /* amber */
+    .badge-high { background:#f8d7da; }   /* red-ish */
+  "))
+  ),
   sidebarLayout(
     sidebarPanel(
       sliderInput("age", "Age (Years):", min = 0, max = 100, value = 50),
@@ -38,55 +76,71 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(
         tabPanel("Home Page",
-                 h3("Stroke Risk Prediction Project Overview", style = "font-weight: bold"),
+                 h3("Stroke Risk Prediction Project Overview", style = "font-weight:bold;"),
                  p("Stroke is the second leading cause of death globally, accounting for approximately 11% of total deaths (WHO). Early identification of stroke risk is critical for timely intervention and improved patient outcomes. This project leverages machine learning to predict stroke risk using demographic, clinical, and lifestyle data."),
-                 h4("Objectives", style = "font-weight: bold"),
+                 
+                 h4("Objectives", style = "font-weight:bold;"),
                  tags$ul(
                    tags$li("Develop and evaluate machine learning models to predict stroke risk in R and deploy the models."),
                    tags$li("Identify key predictors contributing to stroke."),
                    tags$li("Provide actionable insights to guide clinical and public health strategies.")
                  ),
-                 h4("Data Summary", style = "font-weight: bold"),
+                 
+                 h4("Data Summary", style = "font-weight:bold;"),
                  tags$ul(
-                   tags$li("Demographic Factors: Age, gender, marital status, residence type."),
-                   tags$li("Clinical Factors: Hypertension, heart disease, average glucose level, BMI."),
-                   tags$li("Lifestyle Factors: Smoking status, work type.")
+                   tags$li(tags$b("Demographic Factors:"), " Age, gender, marital status, residence type."),
+                   tags$li(tags$b("Clinical Factors:"), " Hypertension, heart disease, average glucose level, BMI."),
+                   tags$li(tags$b("Lifestyle Factors:"), " Smoking status, work type.")
                  ),
+                 
                  p("The target variable is stroke (binary: 'Yes' or 'No'). Due to class imbalance (fewer stroke-positive cases), model evaluation emphasized metrics beyond accuracy."),
-                 h4("Models Used", style = "font-weight: bold"),
+                 
+                 h4("Models Used", style = "font-weight:bold;"),
                  tags$ul(
-                   tags$li("Logistic Regression: Established baseline performance; interpretable but limited in ranking probabilities."),
-                   tags$li("Random Forest: High sensitivity, robust for feature importance but struggled with probability ranking."),
-                   tags$li("Support Vector Machine (SVM): Balanced precision and recall, with improved class separation."),
-                   tags$li("Decision Tree: Simple and interpretable; good for binary classification."),
-                   tags$li("XGBoost: The top-performing model; handled complex relationships and offered strong predictive performance.")
+                   tags$li(tags$b("Logistic Regression:"), " Established baseline performance; interpretable but limited in ranking probabilities."),
+                   tags$li(tags$b("Random Forest:"), " High sensitivity, robust for feature importance but struggled with probability ranking."),
+                   tags$li(tags$b("Support Vector Machine (SVM):"), " Balanced precision and recall, with improved class separation."),
+                   tags$li(tags$b("Decision Tree:"), " Simple and interpretable; good for binary classification."),
+                   tags$li(tags$b("XGBoost:"), " The top-performing model; handled complex relationships and offered strong predictive performance.")
                  ),
-                 h4("Key Findings", style = "font-weight: bold"),
+                 
+                 h4("Key Findings", style = "font-weight:bold;"),
                  tags$ul(
                    tags$li("Accuracy ranged from 91.86% (SVM) to 94.75% (Logistic Regression, Random Forest, Decision Tree)."),
                    tags$li("XGBoost achieved the highest ROC AUC (0.16) among models, balancing sensitivity (99.75%) and precision (94.75%).")
                  ),
-                 h4("Recommendations", style = "font-weight: bold"),
+                 
+                 h4("Recommendations", style = "font-weight:bold;"),
                  tags$ul(
                    tags$li("Deploy XGBoost or Random Forest models in clinical settings for robust stroke prediction."),
                    tags$li("Enhance dataset quality by addressing class imbalance through techniques like SMOTE or collecting more balanced data."),
                    tags$li("Educate stakeholders on leveraging model outputs for proactive care."),
                    tags$li("Validate models with external datasets to ensure generalizability.")
                  ),
-                 h4("Future Directions", style = "font-weight: bold"),
+                 
+                 h4("Future Directions", style = "font-weight:bold;"),
                  tags$ul(
                    tags$li("Combine model predictions for improved performance through ensemble methods."),
                    tags$li("Integrate predictive tools into decision-support systems for scalable deployment."),
                    tags$li("Expand dataset collection to include diverse populations, improving model robustness and inclusivity.")
+                 ),
+                 
+                 tags$hr(),
+                 div(style="background:#eef5ff; border-left:4px solid #2C3EFA; padding:10px 12px; margin-top:6px;",
+                     tags$b("Tip:"), " Use the tabs above to explore ",
+                     tags$b("Model Predictions"), ", review ", tags$b("Model Performance Metrics"),
+                     ", and inspect the ", tags$b("Model Confusion Matrix"), " interactively."
                  )
         ),
         tabPanel("Model Predictions",
                  h4("Key Features"),
-                 p("1. ", span("Color-Coded Probabilities:", style = "font-weight: bold"),
-                   " Predictions are displayed with color coding for low, moderate, and high-risk probabilities."),
-                 p("    - ", span("Low Risk:", style = "font-weight: bold; color: green"), " (Green, less than 20%)."),
-                 p("    - ", span("Moderate Risk:", style = "font-weight: bold; color: yellow"), " (Yellow, between 20% and 50%)."),
-                 p("    - ", span("High Risk:", style = "font-weight: bold; color: red"), " (Red, above 50%)."),
+                 p("Predictions are displayed with color-coded badges for low, moderate, and high-risk probabilities:"),
+                 
+                 # Styled risk labels
+                 HTML('<p><span style="display:inline-block; padding:2px 6px; border-radius:10px; background:#e6f4ea;">Low Risk</span> (less than 20%)</p>'),
+                 HTML('<p><span style="display:inline-block; padding:2px 6px; border-radius:10px; background:#fff3cd;">Moderate Risk</span> (20%–50%)</p>'),
+                 HTML('<p><span style="display:inline-block; padding:2px 6px; border-radius:10px; background:#f8d7da;">High Risk</span> (above 50%)</p>'),
+                 
                  hr(),
                  h4("Predicted Probability of Stroke"),
                  uiOutput("predictions_output")
@@ -167,21 +221,48 @@ server <- function(input, output, session) {
   # Render Predictions
   observeEvent(input$predict, {
     new_data <- prepare_data()
+    
     output$predictions_output <- renderUI({
-      predictions <- lapply(names(models), function(model_name) {
+      items <- lapply(names(models), function(model_name) {
         model <- models[[model_name]]
+        
         if (is.null(model)) {
-          return(HTML(paste0("<p style='color:red;'>", model_name, ": Model not available.</p>")))
+          return(HTML(
+            sprintf("<p style='color:#b00020;'><b>%s</b>: Model not available.</p>", model_name)
+          ))
         }
-        pred_prob <- predict(model, new_data, type = "prob")[[".pred_Yes"]]
-        prob <- round(pred_prob * 100, 2)
-        color <- if (prob < 20) "green" else if (prob < 50) "yellow" else "red"
-        HTML(paste0(
-          "<p style='color:", color, ";'>", model_name, 
-          ": Predicted Probability of Stroke = ", prob, "%</p>"
+        
+        # Prob of 'Yes' (adjust if your model uses a different column name)
+        pred_prob <- tryCatch({
+          p <- predict(model, new_data, type = "prob")[[".pred_Yes"]]
+          as.numeric(p)
+        }, error = function(e) NA_real_)
+        
+        if (is.na(pred_prob)) {
+          return(HTML(
+            sprintf("<p style='color:#b00020;'><b>%s</b>: Unable to compute probability.</p>", model_name)
+          ))
+        }
+        
+        prob_pct <- round(100 * pred_prob, 2)
+        
+        # Map to risk level + badge class
+        if (prob_pct < 20) {
+          level <- "Low Risk";   cls <- "badge badge-low"
+        } else if (prob_pct < 50) {
+          level <- "Moderate Risk"; cls <- "badge badge-mod"
+        } else {
+          level <- "High Risk";  cls <- "badge badge-high"
+        }
+        
+        # Build a single, clean line per model
+        HTML(sprintf(
+          "<p><b>%s</b>: Predicted Probability of Stroke = %0.2f%% &nbsp; <span class='%s'>%s</span></p>",
+          model_name, prob_pct, cls, level
         ))
       })
-      do.call(tagList, predictions)
+      
+      do.call(tagList, items)
     })
   })
   
