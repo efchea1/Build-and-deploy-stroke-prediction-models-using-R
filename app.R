@@ -106,13 +106,14 @@ ui <- fluidPage(
                  
                  h4("Key Findings", style = "font-weight:bold;"),
                  tags$ul(
-                   tags$li("Accuracy ranged from 91.86% (SVM) to 94.75% (Logistic Regression, Random Forest, Decision Tree)."),
-                   tags$li("XGBoost achieved the highest ROC AUC (0.16) among models, balancing sensitivity (99.75%) and precision (94.75%).")
+                   tags$li("Logistic regression ranked stroke risk best (ROC AUC 0.85), followed by XGBoost (0.84) and random forest (0.83); SVM reached 0.65 and the decision tree 0.50."),
+                   tags$li("Only 5.2% of test patients had a stroke, so accuracy (about 95%) mostly reflects non-stroke cases. At the default 0.5 threshold the models flagged at most 1 of 67 stroke patients (SVM: 6), so the threshold must be tuned before any use."),
+                   tags$li("Age, average glucose level, and hypertension were the significant predictors in logistic regression.")
                  ),
                  
                  h4("Recommendations", style = "font-weight:bold;"),
                  tags$ul(
-                   tags$li("Deploy XGBoost or Random Forest models in clinical settings for robust stroke prediction."),
+                   tags$li("Choose a decision threshold that reaches a target sensitivity on validation data instead of using 0.5."),
                    tags$li("Enhance dataset quality by addressing class imbalance through techniques like SMOTE or collecting more balanced data."),
                    tags$li("Educate stakeholders on leveraging model outputs for proactive care."),
                    tags$li("Validate models with external datasets to ensure generalizability.")
@@ -161,11 +162,11 @@ ui <- fluidPage(
                    h4("Model Performance Analysis"),
                    p("Model performance insights are as follows:"),
                    tags$ul(
-                     tags$li(tags$span("Logistic Regression: ", style = "font-weight: bold"), "High accuracy but struggles with ROC AUC."),
-                     tags$li(tags$span("Random Forest: ", style = "font-weight: bold"), "Similar to Logistic Regression but with higher sensitivity."),
-                     tags$li(tags$span("Support Vector Machine: ", style = "font-weight: bold"), "Better class separation with improved ROC AUC."),
-                     tags$li(tags$span("Decision Tree: ", style = "font-weight: bold"), "Simple and interpretable, suitable for binary classification."),
-                     tags$li(tags$span("XGBoost: ", style = "font-weight: bold"), "Strong overall performance but requires careful tuning.")
+                     tags$li(tags$span("Logistic Regression: ", style = "font-weight: bold"), "Best ranking of stroke risk (ROC AUC 0.85) despite being the simplest model."),
+                     tags$li(tags$span("Random Forest: ", style = "font-weight: bold"), "Good ranking (ROC AUC 0.83) but flags no stroke cases at the 0.5 threshold."),
+                     tags$li(tags$span("Support Vector Machine: ", style = "font-weight: bold"), "Weaker ranking (ROC AUC 0.65); flags more patients, catching 6 of 67 strokes."),
+                     tags$li(tags$span("Decision Tree: ", style = "font-weight: bold"), "Made no splits on this imbalanced data, so it gives every patient the same risk (ROC AUC 0.50)."),
+                     tags$li(tags$span("XGBoost: ", style = "font-weight: bold"), "Good ranking (ROC AUC 0.84) but needs threshold tuning to catch strokes.")
                    )
                  ),
                  selectInput("modelPerformanceSelect", "Select a Model to View Metrics:", 
@@ -185,10 +186,10 @@ ui <- fluidPage(
                    hr(),
                    h4("Key Observations and Performance Implications"),
                    tags$ul(
-                     tags$li(tags$span("Logistic Regression: ", style = "font-weight: bold"), "Identifies at least one true positive but struggles with precision."),
-                     tags$li(tags$span("Random Forest: ", style = "font-weight: bold"), "Misses true positives, indicating poor recall."),
-                     tags$li(tags$span("Support Vector Machine: ", style = "font-weight: bold"), "Balanced precision and recall but high false positives."),
-                     tags$li(tags$span("XGBoost: ", style = "font-weight: bold"), "Strong recall but struggles with class imbalance.")
+                     tags$li(tags$span("Logistic Regression: ", style = "font-weight: bold"), "Catches 1 of 67 strokes at the 0.5 threshold."),
+                     tags$li(tags$span("Random Forest: ", style = "font-weight: bold"), "Catches 0 of 67 strokes at the 0.5 threshold."),
+                     tags$li(tags$span("Support Vector Machine: ", style = "font-weight: bold"), "Catches 6 of 67 strokes, with 46 false positives."),
+                     tags$li(tags$span("XGBoost: ", style = "font-weight: bold"), "Catches 1 of 67 strokes at the 0.5 threshold.")
                    )
                  ),
                  selectInput("modelSelect", "Select a Model to View Confusion Matrix:", 
