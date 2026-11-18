@@ -332,10 +332,10 @@ evaluation_metrics <- function(model, test_data) {
     {
       metrics(predictions, truth = stroke, estimate = .pred_class) %>%
         bind_rows(
-          roc_auc(predictions, truth = stroke, .pred_Yes),
-          yardstick::precision(predictions, truth = stroke, estimate = .pred_class),
-          yardstick::recall(predictions, truth = stroke, estimate = .pred_class),
-          yardstick::f_meas(predictions, truth = stroke, estimate = .pred_class)
+          roc_auc(predictions, truth = stroke, .pred_Yes, event_level = "second"),
+          yardstick::precision(predictions, truth = stroke, estimate = .pred_class, event_level = "second"),
+          yardstick::recall(predictions, truth = stroke, estimate = .pred_class, event_level = "second"),
+          yardstick::f_meas(predictions, truth = stroke, estimate = .pred_class, event_level = "second")
         )
     },
     error = function(e) {
@@ -442,56 +442,41 @@ saveRDS(predictions, "model_predictions.rds")
 
 # Task Five: Findings and Conclusions
 
-**Stroke Risk Prediction Project: Findings and Conclusions**
+## Data and Evaluation Setup
 
-**Project Overview**
+- 5,110 patients; split 75/25 into training and test sets (`set.seed(123)`).
+- The test set has **1,278 patients, of whom 67 (5.2%) had a stroke.** Because the classes are so imbalanced, a model that predicts "No stroke" for everyone already reaches about 94.8% accuracy. Accuracy alone is therefore not a useful measure here.
+- Models were compared on ROC AUC (how well predicted probabilities rank stroke patients above non-stroke patients), PR AUC, and sensitivity and specificity at the default 0.5 probability threshold, all with **stroke = "Yes" as the event of interest**.
 
-According to the World Health Organization (WHO) stroke is the 2nd leading cause of death globally, responsible for approximately 11% of total deaths. This project utilized machine learning techniques to predict the risk of stroke based on various demographic, clinical, and lifestyle factors. By leveraging multiple models, this study aimed to identify the most effective prediction model and evaluate its performance metrics. The dataset used included variables such as age, gender, average glucose level, BMI, hypertension, heart disease, marital status, work type, residence type, and smoking status.The outcome variable was stroke. Since stroke ("0", "1", or "Yes", "No") is a binary classification variable, we deployed five binary classification models to answer our research question. 
+## Correction (November 2026)
 
-**Machine Learning Models Used**
+An earlier version of this README reported ROC AUC values of 0.15–0.34 and recall near 1.00. Those numbers were computed with the wrong event level: the outcome's factor levels are `No`, `Yes`, and yardstick treats the first level (`No`) as the event by default. As a result, ROC AUC was reported as 1 − AUC, and precision and recall described the "No stroke" class instead of stroke. The evaluation code now uses `event_level = "second"`, and the results below are from a rerun of the same pipeline and seed.
 
-**Logistic Regression:** A baseline statistical model commonly used for binary classification problems. It was used to provide a reference point for model performance. Logistic regression has interpretable coefficients that indicate the relationship between predictors and the probability of stroke. The logistic regression achieved an accuracy of 94.75% but had a low ROC AUC score of 0.15, indicating poor discrimination for positive cases.
+## Results (test set, stroke = event)
 
-**Random Forest:** A robust ensemble model that combines multiple decision trees to reduce overfitting and improve generalization. The random forest model achieved high accuracy (94.75%) and perfect recall (1.00), but a low ROC AUC score (0.17), highlighting challenges in ranking probabilities effectively. 
+| Model | ROC AUC | PR AUC | Sensitivity @ 0.5 | Specificity @ 0.5 | Strokes flagged (of 67) |
+|---|---|---|---|---|---|
+| Logistic Regression | **0.85** | 0.23 | 1.5% | 99.9% | 1 |
+| XGBoost | 0.84 | 0.20 | 1.5% | 99.8% | 1 |
+| Random Forest | 0.83 | 0.20 | 0.0% | 100% | 0 |
+| Support Vector Machine | 0.65 | 0.10 | 9.0% | 96.2% | 6 |
+| Decision Tree | 0.50 | n/a* | 0.0% | 100% | 0 |
 
-**Support Vector Machine (SVM):** Suitable for complex relationships in data, with its ability to map features into high-dimensional space for better separation. The SVM model achieved accuracy of 91.86% with an improved ROC AUC score (0.34). This model balanced precision and recall, making it a better candidate for stroke prediction compared to Random Forest.
+\*The decision tree made no splits and gives every patient the same probability, so it has no ranking ability (AUC 0.50).
 
-**Decision Tree:**  Provides an intuitive representation of decision-making, making it easy to interpret for medical practitioners. The decision model achieved similar accuracy to Logistic Regression (94.75%), but its ROC AUC score was also limited (0.50). The model showed high precision (94.75%) and recall (100%), indicating its reliability in binary classification tasks.
+Accuracy was about 94.6–94.8% for every model except SVM (91.6%), close to the 94.8% a "predict No for everyone" baseline achieves.
 
-**XGBoost:** A highly efficient and scalable gradient boosting model that is popular for tabular data. It handles missing data, reduces bias and variance, and provides strong predictive performance. The XGBoost model achieved the highest accuracy (94.52%) and ROC AUC (0.16). It showed excellent recall (99.75%) and precision (94.75%).
+## Findings
 
-**Performance Metrics**
+1. **Logistic regression, XGBoost, and random forest rank stroke risk well (ROC AUC 0.83–0.85).** The simplest model, logistic regression, performed as well as the more complex ones.
+2. **At the default 0.5 threshold, no model is useful for catching strokes.** The best models flagged at most 1 of the 67 stroke patients. With only about 5% positive cases, predicted probabilities rarely exceed 0.5, so the models default to "No stroke."
+3. **Accuracy is misleading on imbalanced data.** High accuracy here mostly reflects the 95% of patients who did not have a stroke.
+4. **Key predictors:** in the logistic regression, age (p < 0.001), average glucose level (p = 0.003), and hypertension (p = 0.004) were significant; BMI was not. Age was also the most important variable in the random forest (permutation importance).
 
-Key metrics were used to evaluate model performance, providing insight into classification accuracy and balance between false positives and negatives of stroke risk prediction. Accuracy: The proportion of correct predictions out of all predictions. ROC AUC: Measures the ability of the model to distinguish between classes. Precision: Indicates the proportion of positive identifications that were correct. Recall (Sensitivity): Proportion of actual positives correctly identified. F1-Score: The harmonic mean of precision and recall, balancing the two.
+## Recommendations
 
-**Findings**
+- **Choose the decision threshold deliberately.** Select a threshold that reaches a target sensitivity (for example, 80%) on validation data, rather than using 0.5, and report the resulting specificity and number of false positives.
+- **Address class imbalance** with class weights, down-sampling, or SMOTE, tuned with cross-validation and stratified splitting (`initial_split(..., strata = stroke)`).
+- **Report imbalance-aware metrics** (ROC AUC, PR AUC, sensitivity, specificity, calibration) instead of accuracy.
+- **Validate externally** before any clinical use. This project is a learning exercise on a public dataset and is not a clinical decision tool.
 
-Logistic Regression and Decision Tree achieved similar accuracy but performed poorly in ROC AUC, indicating challenges in ranking probabilities for positive cases. SVM demonstrated a balance between precision and recall, but its ROC AUC score (0.34) suggested room for improvement. Random Forest and XGBoost exhibited high recall, crucial for identifying true positives in stroke prediction, but suffered from low ROC AUC scores.
-
-Models like Random Forest and XGBoost had perfect recall, predicting all true positives effectively, but also showed false positives, reducing precision. Logistic Regression struggled with positive cases, as evidenced by lower recall and ROC AUC scores.
-
-Random Forest and XGBoost provided insights into feature importance, with age, average glucose level, and BMI emerging as the most significant predictors of stroke risk. Lifestyle factors, such as smoking status and work type, were less impactful but still contributed to model predictions.
-
-The dataset had a significant class imbalance, with a majority of negative cases. This affected metrics like ROC AUC and precision. Most models struggled to differentiate positive cases effectively, as reflected in low ROC AUC values.
-
-XGBoost emerged as the best model for stroke prediction, balancing high accuracy, precision, and recall while handling complex feature interactions effectively. SVM provided a reliable alternative, especially when precision and recall needed to be balanced.
-
-Clinical factors like age, BMI, and average glucose level significantly influenced stroke predictions, highlighting the need for targeted interventions in at-risk populations. Demographic and lifestyle factors had secondary importance, suggesting opportunities for public health campaigns.
-
-**Practical Implications:**
-
-The findings can guide clinicians in early stroke risk assessment, especially for patients with elevated glucose levels or BMI. Models with high recall, like Random Forest and XGBoost, can be deployed in medical settings to minimize missed diagnoses.
-
-**Future Work:**
-
-Using techniques like SMOTE (Synthetic Minority Oversampling Technique) or undersampling to balance classes could improve performance. Combining predictions from multiple models could enhance overall performance. Validating models on external datasets or in clinical settings would ensure robustness and reliability.
-
-**Recommendations**
-
-Deploy XGBoost or Random Forest in Clinical Settings: These models demonstrated high sensitivity, ensuring that high-risk patients are not missed.
-
-Focus on Data Quality: Collecting more balanced datasets with equal representation of stroke-positive cases can improve model generalizability.
-
-Integrate Risk Models into Decision Support Systems: Embedding models into electronic health records can aid clinicians in real-time risk assessment.
-
-Educate Stakeholders: Public health officials and clinicians should be trained to interpret model outputs and leverage insights for preventive care.
